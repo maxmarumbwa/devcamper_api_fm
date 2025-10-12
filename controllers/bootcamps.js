@@ -4,7 +4,7 @@
 exports.getBootcamps = (req, res, next) => {
   res
     .status(200)
-    .json({ success: true, msg: 'Show all bootcamps' });
+    .json({ success: true, msg: 'Show all bootcamps', hello: req.hello });
 };
 
 // @desc    Get single bootcamp
