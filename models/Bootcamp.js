@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const BootcampSchema = new mongoose.Schema(
   {
@@ -37,25 +38,7 @@ const BootcampSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add an address']
     },
-    location: {
-      // GeoJSON Point
-      type: {
-        type: String,
-        enum: ['Point']
-      },
-      coordinates: {
-        type: [Number],
-        index: '2dsphere'
-      },
-      formattedAddress: String,
-      street: String,
-      city: String,
-      state: String,
-      zipcode: String,
-      country: String
-    },
     careers: {
-      // Array of strings
       type: [String],
       required: true,
       enum: [
@@ -70,7 +53,7 @@ const BootcampSchema = new mongoose.Schema(
     averageRating: {
       type: Number,
       min: [1, 'Rating must be at least 1'],
-      max: [10, 'Rating must can not be more than 10']
+      max: [10, 'Rating can not be more than 10']
     },
     averageCost: Number,
     photo: {
@@ -92,14 +75,13 @@ const BootcampSchema = new mongoose.Schema(
     acceptGi: {
       type: Boolean,
       default: false
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-   
+    }
   },
-  
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+    timestamps: true
+  }
 );
 
 // Create bootcamp slug from the name
@@ -108,31 +90,12 @@ BootcampSchema.pre('save', function(next) {
   next();
 });
 
-// Geocode & create location field
-BootcampSchema.pre('save', async function(next) {
-  const loc = await geocoder.geocode(this.address);
-  this.location = {
-    type: 'Point',
-    coordinates: [loc[0].longitude, loc[0].latitude],
-    formattedAddress: loc[0].formattedAddress,
-    street: loc[0].streetName,
-    city: loc[0].city,
-    state: loc[0].stateCode,
-    zipcode: loc[0].zipcode,
-    country: loc[0].countryCode
-  };
-
-  // Do not save address in DB
-  this.address = undefined;
-  next();
-});
-
-// Cascade delete courses when a bootcamp is deleted
+// Cascade delete courses and reviews when a bootcamp is deleted
 BootcampSchema.pre('remove', async function(next) {
   console.log(`Courses being removed from bootcamp ${this._id}`);
   await this.model('Course').deleteMany({ bootcamp: this._id });
   console.log(`Reviews being removed from bootcamp ${this._id}`);
-   await this.model('Review').deleteMany({ bootcamp: this._id });
+  await this.model('Review').deleteMany({ bootcamp: this._id });
   next();
 });
 

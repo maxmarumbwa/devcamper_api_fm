@@ -1,3 +1,8 @@
+const Bootcamp = require('../models/Bootcamp');
+const slugify = require('slugify');
+
+
+
 // @desc    Get all bootcamps
 // @route   GET /api/v1/bootcamps
 // @access  Public
@@ -18,9 +23,13 @@ exports.getBootcamp = (req, res, next) => {
 // @desc    Create single bootcamp
 // @route   POST /api/v1/bootcamps
 // @access  Private
-exports.createBootcamp = (req, res, next) => {
-    console.log(req.body);
-  res.status(200).json({ success: true, msg: 'Create new bootcamp' });
+exports.createBootcamp = async (req, res, next) => {
+  const bootcamp = await Bootcamp.create(req.body);
+
+  res.status(201).json({
+    success: true,
+    data: bootcamp
+  });
 };
 
 // @desc      Update bootcamp
