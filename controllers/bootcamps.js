@@ -3,19 +3,23 @@ const slugify = require('slugify');
 
 
 
-/**
- * @desc      Get all bootcamps
- * @route     GET /api/v1/bootcamps
- * @access    Public
- */
+// @desc    Get all bootcamps
+// @route   GET /api/v1/bootcamps
+// @access  Public
 exports.getBootcamps = async (req, res, next) => {
   try {
     const bootcamps = await Bootcamp.find();
-    res.status(200).json({ success: true, data: bootcamps });
+
+    res.status(200).json({
+      success: true,
+      count: bootcamps.length,
+      data: bootcamps
+    });
   } catch (err) {
     res.status(400).json({ success: false });
   }
 };
+
 
 // @desc      Get single bootcamp
 // @route     GET /api/v1/bootcamps/:id
