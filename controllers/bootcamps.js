@@ -11,13 +11,21 @@ const asyncHandler = require('../middleware/async'); // Add this
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
   let query;
 
-  let queryStr = JSON.stringify(req.query);
+  // Copy req.query
+  const reqQuery = { ...req.query };
 
+  // Create query string
+  let queryStr = JSON.stringify(reqQuery);
+
+  // Create operators ($gt, $gte, etc)
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
+  // Finding resource
   query = Bootcamp.find(JSON.parse(queryStr));
 
+  // Executing query
   const bootcamps = await query;
+
 
   res
     .status(200)
