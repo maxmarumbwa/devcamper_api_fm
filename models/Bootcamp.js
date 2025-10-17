@@ -57,6 +57,7 @@ const BootcampSchema = new mongoose.Schema(
       country: String
     },
     careers: {
+      // Array of strings
       type: [String],
       required: true,
       enum: [
@@ -68,9 +69,40 @@ const BootcampSchema = new mongoose.Schema(
         'Other'
       ]
     },
+    averageRating: {
+      type: Number,
+      min: [1, 'Rating must be at least 1'],
+      max: [10, 'Rating must can not be more than 10']
+    },
+    averageCost: Number,
+    photo: {
+      type: String,
+      default: 'no-photo.jpg'
+    },
+    housing: {
+      type: Boolean,
+      default: false
+    },
+    jobAssistance: {
+      type: Boolean,
+      default: false
+    },
+    jobGuarantee: {
+      type: Boolean,
+      default: false
+    },
+    acceptGi: {
+      type: Boolean,
+      default: false
+    },
     createdAt: {
       type: Date,
       default: Date.now
+    },
+    user: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      required: true
     }
   },
   {
@@ -80,39 +112,45 @@ const BootcampSchema = new mongoose.Schema(
 );
 
 // Create bootcamp slug from the name
-BootcampSchema.pre('save', function (next) {
+BootcampSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });
   next();
 });
 
-// ✅ Working geocoder hook
-BootcampSchema.pre('save', async function (next) {
-  try {
-    const loc = await geocoder.geocode(this.address);
+// Geocode & create location field
+BootcampSchema.pre('save', async function(next) {
+  const loc = await geocoder.geocode(this.address);
+  this.location = {
+    type: 'Point',
+    coordinates: [loc[0].longitude, loc[0].latitude],
+    formattedAddress: loc[0].formattedAddress,
+    street: loc[0].streetName,
+    city: loc[0].city,
+    state: loc[0].stateCode,
+    zipcode: loc[0].zipcode,
+    country: loc[0].countryCode
+  };
 
-    if (!loc || !loc.length) {
-      console.error(`⚠️ Geocoding failed for address: ${this.address}`);
-      return next();
-    }
+  // Do not save address in DB
+  this.address = undefined;
+  next();
+});
 
-    this.location = {
-      type: 'Point',
-      coordinates: [loc[0].longitude, loc[0].latitude],
-      formattedAddress: loc[0].formattedAddress,
-      street: loc[0].streetName || '',
-      city: loc[0].city || '',
-      state: loc[0].stateCode || '',
-      zipcode: loc[0].zipcode || '',
-      country: loc[0].countryCode || ''
-    };
+// Cascade delete courses when a bootcamp is deleted
+BootcampSchema.pre('remove', async function(next) {
+  console.log(`Courses being removed from bootcamp ${this._id}`);
+  await this.model('Course').deleteMany({ bootcamp: this._id });
+  console.log(`Reviews being removed from bootcamp ${this._id}`);
+   await this.model('Review').deleteMany({ bootcamp: this._id });
+  next();
+});
 
-    // Don’t save the plain address
-    this.address = undefined;
-    next();
-  } catch (err) {
-    console.error(`❌ Geocoder Error: ${err.message}`);
-    next(err);
-  }
+// Reverse populate with virtuals
+BootcampSchema.virtual('courses', {
+  ref: 'Course',
+  localField: '_id',
+  foreignField: 'bootcamp',
+  justOne: false
 });
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);
