@@ -4,7 +4,8 @@ const logger = require('./middleware/logger');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
-require('colors');
+const fileupload = require('express-fileupload');
+
 
 
 // Load environment variables
@@ -27,6 +28,8 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// File uploading middleware
+app.use(fileupload());
 //mount routers
 app.use('/api/v1/bootcamps', bootcamps);
 app.use('/api/v1/courses', courses);
