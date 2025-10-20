@@ -7,6 +7,9 @@ const {
   deleteCourse
 } = require('../controllers/courses');
 
+// bring in protect middleware
+const { protect} = require('../middleware/auth');
+
 const Course = require('../models/Course');
 const advancedResults = require('../middleware/advancedResults');
 
@@ -16,12 +19,12 @@ const router = express.Router({ mergeParams: true });
 router
   .route('/')
   .get(advancedResults(Course, { path: 'bootcamp', select: 'name description' }), getCourses)
-  .post(addCourse);
+  .post(protect, addCourse);
 
 router
   .route('/:id')
   .get(getCourse)
-  .put(updateCourse)
-  .delete(deleteCourse);
+  .put(protect, updateCourse)
+  .delete(protect, deleteCourse);
 
 module.exports = router;
